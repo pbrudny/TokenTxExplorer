@@ -12,29 +12,16 @@ const web3 = new Web3(`https://mainnet.infura.io/v3/${infuraProjectId}`);
 // ERC-20 Token Transfer Event Signature
 const transferEventSignature = web3.utils.sha3('Transfer(address,address,uint256)');
 
-async function getBlockCount() {
-  try {
-    // Fetch the latest block number
-    const latestBlock = await web3.eth.getBlockNumber();
-    console.log('Latest Block:', latestBlock);
-
-  } catch (error) {
-    console.error('Error fetching block count:', error);
-  }
-}
-
-getBlockCount();
-
 async function getFirstThreeLogs() {
   try {
     // Fetch logs
     const logs = await web3.eth.getPastLogs({
-      fromBlock: '0x1041A59',
-      toBlock: '0x1045ACF',
+      fromBlock: 17044249,
+      toBlock: 17057807,
       address: tokenAddress,
       topics: [transferEventSignature]
     });
-    const first20Logs = logs.slice(0, 3);
+    const first20Logs = logs.slice(0, 20);
 
     first20Logs.forEach(log => {
       // Decode the log data
@@ -70,3 +57,4 @@ async function getFirstThreeLogs() {
 }
 
 getFirstThreeLogs();
+
