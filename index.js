@@ -34,7 +34,35 @@ async function getFirstThreeLogs() {
       address: tokenAddress,
       topics: [transferEventSignature]
     });
-    console.log('First 3 Logs:', logs.slice(0, 3));
+    const first20Logs = logs.slice(0, 3);
+
+    first20Logs.forEach(log => {
+      // Decode the log data
+      const decodedLog = web3.eth.abi.decodeLog([
+        {
+          type: 'address',
+          name: 'from',
+          indexed: true
+        },
+        {
+          type: 'address',
+          name: 'to',
+          indexed: true
+        },
+        {
+          type: 'uint256',
+          name: 'value'
+        }
+      ], log.data, [log.topics[1], log.topics[2]]);
+
+
+      console.log(`Transaction Hash: ${log.transactionHash}`);
+      console.log(`From: ${decodedLog.from}`);
+      console.log(`To: ${decodedLog.to}`);
+      console.log(`Value: ${web3.utils.fromWei(decodedLog.value, 'ether')} tokens`);
+      console.log(`Block Number: ${log.blockNumber}`);
+      console.log('-----------------------------------');
+    });
 
   } catch (error) {
     console.error('Error fetching logs:', error);
