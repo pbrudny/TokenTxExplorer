@@ -33,12 +33,12 @@ const csvWriter = createCsvWriter({
   ]
 });
 
-async function getFirstThreeLogs() {
+async function getEarlyLogs() {
   try {
     // Fetch logs
     const logs = await web3.eth.getPastLogs({
       fromBlock: startBlock,
-      toBlock: startBlock + 1000,
+      toBlock: startBlock + 2000,
       address: tokenAddress,
       topics: [transferEventSignature]
     });
@@ -64,20 +64,20 @@ async function getFirstThreeLogs() {
       ], log.data, [log.topics[1], log.topics[2]]);
 
       return {
-        transactionHash: "https://etherscan.io/tx/" + log.transactionHash,
-        from: "https://etherscan.io/address/"+ decodedLog.from,
-        to: "https://etherscan.io/address/" + decodedLog.to,
+        transactionHash: log.transactionHash,
+        from: decodedLog.from,
+        to: decodedLog.to,
         value: web3.utils.fromWei(decodedLog.value, 'ether'),
         blockNumber: log.blockNumber
       };
     });
 
     await csvWriter.writeRecords(logData);
-    console.log('Logs have been written to logs.csv');
+    console.log('csv logs file has been created in exported_files');
 
   } catch (error) {
     console.error('Error fetching logs:', error);
   }
 }
 
-getFirstThreeLogs();
+getEarlyLogs();
