@@ -1,5 +1,6 @@
 const { Web3 } = require('web3');
 const axios = require('axios');
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 require('dotenv').config();
 
 // Load environment variables
@@ -17,22 +18,33 @@ const transferEventSignature = web3.utils.sha3('Transfer(address,address,uint256
 // mint
 // emit Transfer(address(0), account, amount);
 
-
 // time calculation 17,108,941
-//earliest without transfer event signature 17046105
-const startBlock = 17046105; //first log block for transfer 17054328
+// earliest without transfer event signature 17046105
+const startBlock = 17046105; // first log block for transfer 17054328
+
+const csvWriter = createCsvWriter({
+  path: 'exported_files/'+tokenAddress+'.csv',
+  header: [
+    { id: 'transactionHash', title: 'Transaction Hash' },
+    { id: 'from', title: 'From' },
+    { id: 'to', title: 'To' },
+    { id: 'value', title: 'Value (tokens)' },
+    { id: 'blockNumber', title: 'Block Number' }
+  ]
+});
+
 async function getFirstThreeLogs() {
   try {
     // Fetch logs
     const logs = await web3.eth.getPastLogs({
       fromBlock: startBlock,
-      toBlock: startBlock+1000,
+      toBlock: startBlock + 1000,
       address: tokenAddress,
       topics: [transferEventSignature]
     });
-    const first20Logs = logs.slice(0, 100);
+    const first100Logs = logs.slice(0, 100);
 
-    first20Logs.forEach(log => {
+    const logData = first100Logs.map(log => {
       // Decode the log data
       const decodedLog = web3.eth.abi.decodeLog([
         {
@@ -51,14 +63,17 @@ async function getFirstThreeLogs() {
         }
       ], log.data, [log.topics[1], log.topics[2]]);
 
-
-      console.log(`Transaction Hash: ${log.transactionHash}`);
-      console.log(`From: ${decodedLog.from}`);
-      console.log(`To: ${decodedLog.to}`);
-      console.log(`Value: ${web3.utils.fromWei(decodedLog.value, 'ether')} tokens`);
-      console.log(`Block Number: ${log.blockNumber}`);
-      console.log('-----------------------------------');
+      return {
+        transactionHash: "https://etherscan.io/tx/" + log.transactionHash,
+        from: "https://etherscan.io/address/"+ decodedLog.from,
+        to: "https://etherscan.io/address/" + decodedLog.to,
+        value: web3.utils.fromWei(decodedLog.value, 'ether'),
+        blockNumber: log.blockNumber
+      };
     });
+
+    await csvWriter.writeRecords(logData);
+    console.log('Logs have been written to logs.csv');
 
   } catch (error) {
     console.error('Error fetching logs:', error);
@@ -66,4 +81,3 @@ async function getFirstThreeLogs() {
 }
 
 getFirstThreeLogs();
-
