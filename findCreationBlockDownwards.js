@@ -1,11 +1,9 @@
 const { Web3 } = require('web3');
-const axios = require('axios');
 require('dotenv').config();
 
 // Load environment variables
 const infuraProjectId = process.env.INFURA_PROJECT_ID;
 const tokenAddress = process.env.TOKEN_ADDRESS;
-const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
 
 // Connect to the Ethereum network via Infura
 const web3 = new Web3(`https://mainnet.infura.io/v3/${infuraProjectId}`);
@@ -13,7 +11,7 @@ const web3 = new Web3(`https://mainnet.infura.io/v3/${infuraProjectId}`);
 // ERC-20 Token Transfer Event Signature
 const transferEventSignature = web3.utils.sha3('Transfer(address,address,uint256)');
 
-//earliest so far 11749108
+// Earliest block known so far
 async function findCreationBlock() {
   try {
     const code = await web3.eth.getCode(tokenAddress);
@@ -23,18 +21,18 @@ async function findCreationBlock() {
     }
 
     let creationBlock = null;
-    let fromBlock = 17046105;
-    let toBlock = await web3.eth.getBlockNumber();
+    let fromBlock = 17046105; // Starting block
+    let toBlock = fromBlock;
     let found = false;
 
-    while (!found && fromBlock <= toBlock) {
+    while (!found && fromBlock >= 0) {
       const blockRange = 100;
-      const endBlock = fromBlock + blockRange > toBlock ? toBlock : fromBlock + blockRange;
+      const startBlock = fromBlock - blockRange < 0 ? 0 : fromBlock - blockRange;
 
-      console.log(`Searching for contract transaction between blocks ${fromBlock} and ${endBlock}...`);
+      console.log(`Searching for contract transaction between blocks ${startBlock} and ${fromBlock}...`);
       const logs = await web3.eth.getPastLogs({
-        fromBlock,
-        toBlock: endBlock,
+        fromBlock: startBlock,
+        toBlock: fromBlock,
         address: tokenAddress
       });
 
@@ -49,7 +47,7 @@ async function findCreationBlock() {
         }
       }
 
-      fromBlock = endBlock + 1;
+      fromBlock = startBlock - 1;
     }
 
     if (creationBlock) {
@@ -57,16 +55,9 @@ async function findCreationBlock() {
     } else {
       console.log('Unable to find the contract creation transaction.');
     }
-
-    // if (creationBlock) {
-    //   console.log(`The ERC-20 token was created in block number: ${creationBlock}`);
-    // } else {
-    //   console.log('Unable to find the contract creation transaction.');
-    // }
   } catch (error) {
     console.error('Error fetching contract creation block:', error);
   }
 }
 
 findCreationBlock();
-
