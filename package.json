@@ -12,7 +12,7 @@
   "author": "Piotr Brudny",
   "license": "MIT",
   "description": "Token transaction explorer",
-  "type": "module",
+  "type": "commonjs",
   "bin": "dist/index.mjs",
   "dependencies": {
     "axios": "^1.7.2",

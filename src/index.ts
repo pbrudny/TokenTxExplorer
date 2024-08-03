@@ -1,9 +1,13 @@
-import { Web3 } from 'web3';
-import dotenv from 'dotenv';
-import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
-import * as fs from 'fs';
-import * as path from 'path';
-import chalk from 'chalk';
+const { Web3 } = require('web3');
+const dotenv = require('dotenv');
+const { createObjectCsvWriter } = require('csv-writer');
+const fs = require('fs');
+const path = require('path');
+const chalk = require('chalk');
+
+// Load environment variables
+dotenv.config();
+
 
 // Load environment variables
 dotenv.config();
