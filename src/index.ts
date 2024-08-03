@@ -1,6 +1,6 @@
-const { Web3 } = require('web3');
+const { Web3 } = require('web3');// Correct import
 const dotenv = require('dotenv');
-const { createObjectCsvWriter } = require('csv-writer');
+const { createObjectCsvWriter } = require('csv-writer'); // Correct import
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
@@ -8,12 +8,8 @@ const chalk = require('chalk');
 // Load environment variables
 dotenv.config();
 
-
-// Load environment variables
-dotenv.config();
-
-const infuraProjectId: string | undefined = process.env.INFURA_PROJECT_ID;
-const tokenAddress: string | undefined = process.env.TOKEN_ADDRESS;
+const infuraProjectId: string = process.env.INFURA_PROJECT_ID!;
+const tokenAddress: string = process.env.TOKEN_ADDRESS!;
 
 if (!infuraProjectId || !tokenAddress) {
   console.error(chalk.red("INFURA_PROJECT_ID and TOKEN_ADDRESS must be set in the environment variables."));
@@ -23,10 +19,10 @@ if (!infuraProjectId || !tokenAddress) {
 const exportDir: string = path.join(process.cwd(), 'exported_files');
 createExportDirectory(exportDir);
 
-const web3: Web3 = new Web3(`https://mainnet.infura.io/v3/${infuraProjectId}`);
+const web3: InstanceType<typeof Web3> = new Web3(`https://mainnet.infura.io/v3/${infuraProjectId}`);
 const transferEventSignature: string = web3.utils.sha3('Transfer(address,address,uint256)')!;
 
-const csvWriter = createCsvWriter({
+const csvWriter = createObjectCsvWriter({
   path: `${exportDir}/${tokenAddress}.csv`,
   header: [
     { id: 'transactionHash', title: 'Transaction Hash' },
@@ -81,7 +77,7 @@ async function getBlockNumberAtDate(dateString: string): Promise<number> {
  * @returns {Promise<number>} - The creation block number.
  */
 async function findCreationBlock(fromBlock: number): Promise<number> {
-  const code: string = await web3.eth.getCode(tokenAddress!);
+  const code: string = await web3.eth.getCode(tokenAddress);
   if (code === '0x') {
     throw new Error('The contract does not exist.');
   }
@@ -108,7 +104,7 @@ async function findCreationBlock(fromBlock: number): Promise<number> {
       for (const log of logs) {
         if (typeof log === "object" && log.transactionHash) {
           const txReceipt = await web3.eth.getTransactionReceipt(log.transactionHash);
-          if (txReceipt.contractAddress && txReceipt.contractAddress.toLowerCase() === tokenAddress!.toLowerCase()) {
+          if (txReceipt.contractAddress && txReceipt.contractAddress.toLowerCase() === tokenAddress.toLowerCase()) {
             creationBlock = Number(txReceipt.blockNumber);
             found = true;
             process.stdout.write(chalk.green('✔\n')); // Success symbol
@@ -149,7 +145,7 @@ async function getEarlyLogs(creationBlock: number, logsCount = 100): Promise<voi
     topics: [transferEventSignature]
   });
 
-  const logData = logs.slice(0, logsCount).map(log => {
+  const logData = logs.slice(0, logsCount).map((log: any) => {
     if (typeof log === "object" && log.data && log.topics) {
       const decodedLog = web3.eth.abi.decodeLog([
         { type: 'address', name: 'from', indexed: true },
@@ -166,7 +162,7 @@ async function getEarlyLogs(creationBlock: number, logsCount = 100): Promise<voi
       };
     }
     return null;
-  }).filter(data => data !== null);
+  }).filter((data: any) => data !== null);
 
   await csvWriter.writeRecords(logData as any[]);
   console.log(chalk.green(`CSV logs file has been created at /exported_files/${tokenAddress}.csv`));

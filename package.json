@@ -1,22 +1,21 @@
 {
   "name": "tokentxexplorer",
   "version": "1.0.0",
-  "main": "dist/index.mjs",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "tsc && npm run rename",
-    "rename": "find dist -name '*.js' -exec sh -c 'mv \"$0\" \"${0%.js}.mjs\"' {} \\;",
+    "build": "tsc",
+    "start": "node dist/index.js",
     "export": "pkg .",
-    "start": "node dist/index.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Piotr Brudny",
   "license": "MIT",
   "description": "Token transaction explorer",
   "type": "commonjs",
-  "bin": "dist/index.mjs",
+  "bin": "dist/index.js",
   "dependencies": {
     "axios": "^1.7.2",
-    "chalk": "^5.3.0",
+    "chalk": "^4.1.0",
     "csv-writer": "^1.6.0",
     "dotenv": "^16.4.5",
     "web3": "^4.11.1"
