@@ -4,3 +4,4 @@ exported_files
 tokentxexplorer-linux
 tokentxexplorer-macos
 tokentxexplorer-win.exe
+.DS_Store
