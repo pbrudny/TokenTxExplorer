@@ -1,15 +1,18 @@
-const { Web3 } = require('web3');
-require('dotenv').config();
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
-const fs = require('fs');
-const path = require('path');
+import { Web3 } from 'web3';
+import dotenv from 'dotenv';
+import { createObjectCsvWriter as createCsvWriter } from 'csv-writer';
+import fs from 'fs';
+import path from 'path';
+import chalk from 'chalk';
 
 // Load environment variables
+dotenv.config();
+
 const infuraProjectId = process.env.INFURA_PROJECT_ID;
 const tokenAddress = process.env.TOKEN_ADDRESS;
 
 // Create directory for exported files if it doesn't exist
-const exportDir = path.join(__dirname, 'exported_files');
+const exportDir = path.join(process.cwd(), 'exported_files');
 if (!fs.existsSync(exportDir)) {
   fs.mkdirSync(exportDir, { recursive: true });
 }
@@ -70,7 +73,7 @@ async function findCreationBlock(fromBlock) {
       const blockRange = 500;
       const startBlock = fromBlock - blockRange < 0 ? 0 : fromBlock - blockRange;
 
-      console.log(`* Searching blocks ${startBlock} and ${fromBlock}`);
+      console.log(chalk.blue(`* Searching blocks ${startBlock} to ${fromBlock}`));
       const logs = await web3.eth.getPastLogs({
         fromBlock: startBlock,
         toBlock: fromBlock,
@@ -78,7 +81,7 @@ async function findCreationBlock(fromBlock) {
       });
 
       if (logs.length > 0) {
-        console.log(logs.length + ' token logs found');
+        console.log(chalk.green(`${logs.length} token logs found`));
         for (const log of logs) {
           const txReceipt = await web3.eth.getTransactionReceipt(log.transactionHash);
           if (txReceipt.contractAddress && txReceipt.contractAddress.toLowerCase() === tokenAddress.toLowerCase()) {
@@ -89,7 +92,7 @@ async function findCreationBlock(fromBlock) {
         }
       } else {
         emptyBlocksCount++;
-        console.log(`Empty blocks: ${emptyBlocksCount}`);
+        console.log(chalk.yellow(`Empty blocks: ${emptyBlocksCount}`));
         if (emptyBlocksCount > maxEmptyBlocks) {
           throw new Error('Too many empty blocks found. Try with a later date.');
         }
@@ -99,7 +102,7 @@ async function findCreationBlock(fromBlock) {
     }
 
     if (creationBlock) {
-      console.log(`The ERC-20 token was created in block number: ${creationBlock}`);
+      console.log(chalk.green(`The ERC-20 token was created in block number: ${creationBlock}`));
       return creationBlock;
     } else {
       throw new Error('Unable to find the contract creation transaction.');
@@ -149,28 +152,28 @@ async function getEarlyLogs(creationBlock, logsCount = 100) {
 
     // Log the data to the console
     logData.forEach(data => {
-      console.log('From:', data.from, 'Block', data.blockNumber, data.transactionHash);
+      console.log(chalk.cyan(`From: ${data.from}, Block: ${data.blockNumber}, Transaction: ${data.transactionHash}`));
     });
 
     await csvWriter.writeRecords(logData);
-    console.log(`CSV logs file has been created at exported_files/${tokenAddress}.csv`);
+    console.log(chalk.green(`CSV logs file has been created at exported_files/${tokenAddress}.csv`));
 
   } catch (error) {
-    console.error('Error fetching logs:', error);
+    console.error(chalk.red('Error fetching logs:', error));
   }
 }
 
 async function main(startDate) {
   try {
-    console.log('Token address:', tokenAddress);
-    console.log('* Fetching ETH block number for date:', startDate);
+    console.log(chalk.bold(`Token address: ${tokenAddress}`));
+    console.log(chalk.bold(`* Fetching ETH block number for date: ${startDate}`));
     const blockNumber = await getBlockNumberAtDate(startDate);
-    console.log(`${startDate} block number: ${blockNumber}`);
-    console.log(`* Searching for ${tokenAddress} token creation block`);
+    console.log(chalk.green(`${startDate} block number: ${blockNumber}`));
+    console.log(chalk.bold(`* Searching for ${tokenAddress} token creation block`));
     const creationBlock = await findCreationBlock(blockNumber);
     await getEarlyLogs(creationBlock);
   } catch (error) {
-    console.error('Error:', error.message);
+    console.error(chalk.red('Error:', error.message));
   }
 }
 
