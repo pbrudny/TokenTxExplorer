@@ -33,7 +33,7 @@ const csvWriter = createCsvWriter({
 });
 
 async function getBlockNumberAtDate(dateString) {
-  const date = new Date(dateString);
+  const date = new Date(`${dateString}T00:00:00Z`);
   const timestamp = BigInt(Math.floor(date.getTime() / 1000)); // Convert to BigInt
 
   // Initial block range for binary search
@@ -73,7 +73,7 @@ async function findCreationBlock(fromBlock) {
       const blockRange = 500;
       const startBlock = fromBlock - blockRange < 0 ? 0 : fromBlock - blockRange;
 
-      console.log(chalk.blue(`* Searching blocks ${startBlock} to ${fromBlock}`));
+      console.log(chalk.bold(`From ${startBlock} to ${fromBlock}`));
       const logs = await web3.eth.getPastLogs({
         fromBlock: startBlock,
         toBlock: fromBlock,
@@ -81,21 +81,25 @@ async function findCreationBlock(fromBlock) {
       });
 
       if (logs.length > 0) {
-        console.log(chalk.green(`${logs.length} token logs found`));
+        console.log(chalk.green(`-> ${logs.length} token logs found`));
+        process.stdout.write(chalk.black('-> Checking logs for contract creation transaction: '));
         for (const log of logs) {
           const txReceipt = await web3.eth.getTransactionReceipt(log.transactionHash);
           if (txReceipt.contractAddress && txReceipt.contractAddress.toLowerCase() === tokenAddress.toLowerCase()) {
             creationBlock = txReceipt.blockNumber;
             found = true;
+            process.stdout.write(chalk.green('✔\n')); // Success symbol
             break;
           }
+          process.stdout.write(chalk.black('*')); // Failure symbol
         }
+        console.log(' ');
       } else {
-        emptyBlocksCount++;
-        console.log(chalk.yellow(`Empty blocks: ${emptyBlocksCount}`));
+        console.log(chalk.yellow('no token logs'));
         if (emptyBlocksCount > maxEmptyBlocks) {
-          throw new Error('Too many empty blocks found. Try with a later date.');
+          throw new Error('Too many blocks without a token transaction. Probably token was not created that time. Try with a later date.');
         }
+        emptyBlocksCount++;
       }
 
       fromBlock = startBlock - 1;
@@ -151,32 +155,35 @@ async function getEarlyLogs(creationBlock, logsCount = 100) {
       });
 
     // Log the data to the console
-    logData.forEach(data => {
-      console.log(chalk.cyan(`From: ${data.from}, Block: ${data.blockNumber}, Transaction: ${data.transactionHash}`));
-    });
+    // logData.forEach(data => {
+    //   console.log(chalk.cyan(`From: ${data.from}, Block: ${data.blockNumber}, Transaction: ${data.transactionHash}`));
+    // });
 
     await csvWriter.writeRecords(logData);
-    console.log(chalk.green(`CSV logs file has been created at exported_files/${tokenAddress}.csv`));
+    console.log(chalk.green(`CSV logs file has been created at /exported_files/${tokenAddress}.csv`));
 
   } catch (error) {
-    console.error(chalk.red('Error fetching logs:', error));
+    console.error(chalk.red('Error writing logs:', error));
   }
 }
 
 async function main(startDate) {
   try {
     console.log(chalk.bold(`Token address: ${tokenAddress}`));
-    console.log(chalk.bold(`* Fetching ETH block number for date: ${startDate}`));
+    console.log(chalk.bold(`Fetching ETH block number for date: ${startDate}`));
     const blockNumber = await getBlockNumberAtDate(startDate);
-    console.log(chalk.green(`${startDate} block number: ${blockNumber}`));
-    console.log(chalk.bold(`* Searching for ${tokenAddress} token creation block`));
+    console.log(chalk.green(`Found block number: ${blockNumber}`));
+    console.log(chalk.bold(`Searching for ${tokenAddress} token creation block`));
     const creationBlock = await findCreationBlock(blockNumber);
-    await getEarlyLogs(creationBlock);
+
+    await getEarlyLogs(Number(creationBlock));
   } catch (error) {
-    console.error(chalk.red('Error:', error.message));
+    console.error(chalk.red(error.message));
   }
 }
 
 // Read start date from command-line arguments
-const startDate = process.argv[2] || "2020-08-01T00:00:00Z";
+const startDate = process.argv[2] || "2022-11-12";
+
 main(startDate);
+// getEarlyLogs(15948828);

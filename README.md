@@ -58,7 +58,7 @@ Use `pkg` to create a standalone executable for your platform.
 To run the application, execute the built binary with a specified date:
 
 ```bash
-./tokentxexplorer-linux-x64 "2023-08-01T00:00:00Z"
+./tokentxexplorer-linux-x64 "2023-08-01"
 ```
 
 Replace the binary name with the one corresponding to your OS.
@@ -66,7 +66,7 @@ Replace the binary name with the one corresponding to your OS.
 ## Example
 
 ```bash
-./tokentxexplorer-linux-x64 "2023-08-01T00:00:00Z"
+./tokentxexplorer-linux-x64 "2023-08-01"
 ```
 
 This command will print the block number for the date "2023-08-01" and retrieve information about the token creation and early transfer logs.
